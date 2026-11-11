@@ -1,6 +1,16 @@
+import http from 'http';
 import { Client, GatewayIntentBits, Events, VoiceState, ChannelType, PermissionFlagsBits, EmbedBuilder, Guild, VoiceChannel, TextChannel, GuildMember, ChatInputCommandInteraction } from 'discord.js';
 import { getRoom, createRoom, updateRoom, deleteRoom, getGuildConfig, upsertGuildConfig, addRoomMember, removeRoomMember, getRoomMembers, isUserPermitted, getUserRooms, VoiceRoom, GuildConfig } from './database.js';
 import { config } from './config.js';
+
+// Simple HTTP server to keep Render happy (port binding required)
+const port = process.env.PORT || 3000;
+http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('TempVoice Bot is running!');
+}).listen(port, () => {
+  console.log(`🌐 HTTP server listening on port ${port}`);
+});
 
 const client = new Client({
   intents: [
