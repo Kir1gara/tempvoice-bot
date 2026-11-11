@@ -1,0 +1,24 @@
+{
+  "name": "tempvoice-bot",
+  "version": "1.0.0",
+  "description": "TempVoice-like Discord bot for dynamic voice channels",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "deploy-commands": "ts-node src/deploy-commands.ts",
+    "postinstall": "npm run build"
+  },
+  "keywords": ["discord", "bot", "voice", "tempvoice"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "^14.14.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3",
+    "ts-node": "^10.9.2"
+  }
+}
