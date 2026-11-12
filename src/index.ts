@@ -207,7 +207,8 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
     return;
   }
 
-  switch (commandName) {
+  const subcommand = interaction.options.getSubcommand();
+  switch (subcommand) {
     case 'lock':
       if (!isOwner) { await interaction.reply({ content: '❌ Только владелец может залочить комнату!', ephemeral: true }); return; }
       updateRoom(voiceState.channelId, { locked: true });
