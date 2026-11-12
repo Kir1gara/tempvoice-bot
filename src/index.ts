@@ -91,7 +91,16 @@ async function createVoiceRoom(guild: Guild, ownerId: string, creatorChannel: Vo
 async function deleteVoiceRoom(guild: Guild, channelId: string): Promise<void> {
   const channel = guild.channels.cache.get(channelId);
   if (channel && channel.type === ChannelType.GuildVoice) {
-    await channel.delete('TempVoice: room empty').catch(console.error);
+    try {
+      await channel.delete('TempVoice: room empty');
+    } catch (error: any) {
+      // Канал уже удалён или недоступен — это нормально, просто удаляем из БД
+      if (error?.code === 10003 || error?.status === 404) {
+        console.log(`Канал ${channelId} уже удалён, удаляем из БД`);
+      } else {
+        console.error('Ошибка при удалении канала:', error);
+      }
+    }
   }
   deleteRoom(channelId);
 }
@@ -192,7 +201,11 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
 
   const isOwner = isRoomOwner(room, member.id);
   const isPermitted = isUserPermitted(voiceState.channelId, member.id);
-  const voiceChannel = channel as VoiceChannel;
+  const voiceChannel = guild.channels.cache.get(voiceState.channelId) as VoiceChannel | null;
+  if (!voiceChannel || voiceChannel.type !== ChannelType.GuildVoice) {
+    await interaction.reply({ content: '❌ Голосовой канал не найден!', ephemeral: true });
+    return;
+  }
 
   switch (commandName) {
     case 'lock':
