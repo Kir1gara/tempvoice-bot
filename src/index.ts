@@ -177,6 +177,11 @@ function isRoomOwner(room: VoiceRoom, userId: string): boolean {
   return room.owner_id === userId;
 }
 
+function isModerator(member: GuildMember): boolean {
+  if (!member.guild) return false;
+  return config.MODERATOR_ROLE_IDS.some(roleId => member.roles.cache.has(roleId));
+}
+
 async function handleCommand(interaction: ChatInputCommandInteraction): Promise<void> {
   const { commandName, guild, member, channel } = interaction;
   if (!guild || !member || !(member instanceof GuildMember)) return;
@@ -210,21 +215,21 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
   const subcommand = interaction.options.getSubcommand();
   switch (subcommand) {
     case 'lock':
-      if (!isOwner) { await interaction.reply({ content: '❌ Только владелец может залочить комнату!', ephemeral: true }); return; }
+      if (!isOwner && !isModerator(member)) { await interaction.reply({ content: '❌ Только владелец или модератор может залочить комнату!', ephemeral: true }); return; }
       updateRoom(voiceState.channelId, { locked: true });
       await voiceChannel.permissionOverwrites.edit(guild.id, { Connect: false }).catch(console.error);
       await interaction.reply({ content: '🔒 Комната залочена. Никто не может войти.', ephemeral: true });
       break;
 
     case 'unlock':
-      if (!isOwner) { await interaction.reply({ content: '❌ Только владелец может разлочить комнату!', ephemeral: true }); return; }
+      if (!isOwner && !isModerator(member)) { await interaction.reply({ content: '❌ Только владелец или модератор может разлочить комнату!', ephemeral: true }); return; }
       updateRoom(voiceState.channelId, { locked: false });
       await voiceChannel.permissionOverwrites.edit(guild.id, { Connect: true }).catch(console.error);
       await interaction.reply({ content: '🔓 Комната разлочена. Все могут войти.', ephemeral: true });
       break;
 
     case 'name':
-      if (!isOwner) { await interaction.reply({ content: '❌ Только владелец может переименовать комнату!', ephemeral: true }); return; }
+      if (!isOwner && !isModerator(member)) { await interaction.reply({ content: '❌ Только владелец или модератор может переименовать комнату!', ephemeral: true }); return; }
       const newName = interaction.options.getString('name', true);
       if (newName.length > 100) { await interaction.reply({ content: '❌ Название слишком длинное (макс. 100 символов)', ephemeral: true }); return; }
       updateRoom(voiceState.channelId, { name: newName });
@@ -233,7 +238,7 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
       break;
 
     case 'limit':
-      if (!isOwner) { await interaction.reply({ content: '❌ Только владелец может поставить лимит!', ephemeral: true }); return; }
+      if (!isOwner && !isModerator(member)) { await interaction.reply({ content: '❌ Только владелец или модератор может поставить лимит!', ephemeral: true }); return; }
       const limit = interaction.options.getInteger('limit', true);
       if (limit < 0 || limit > 99) { await interaction.reply({ content: '❌ Лимит от 0 до 99 (0 = без лимита)', ephemeral: true }); return; }
       updateRoom(voiceState.channelId, { user_limit: limit });
@@ -242,7 +247,7 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
       break;
 
     case 'kick':
-      if (!isOwner) { await interaction.reply({ content: '❌ Только владелец может кикать!', ephemeral: true }); return; }
+      if (!isOwner && !isModerator(member)) { await interaction.reply({ content: '❌ Только владелец или модератор может кикать!', ephemeral: true }); return; }
       const targetUser = interaction.options.getUser('user', true);
       const targetMember = await guild.members.fetch(targetUser.id).catch(() => null);
       if (!targetMember || targetMember.voice.channelId !== voiceState.channelId) {
@@ -255,7 +260,7 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
       break;
 
     case 'permit':
-      if (!isOwner) { await interaction.reply({ content: '❌ Только владелец может давать доступ!', ephemeral: true }); return; }
+      if (!isOwner && !isModerator(member)) { await interaction.reply({ content: '❌ Только владелец или модератор может давать доступ!', ephemeral: true }); return; }
       const permitUser = interaction.options.getUser('user', true);
       const permitMember = await guild.members.fetch(permitUser.id).catch(() => null);
       if (!permitMember) { await interaction.reply({ content: '❌ Пользователь не найден на сервере!', ephemeral: true }); return; }
@@ -265,7 +270,7 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
       break;
 
     case 'reject':
-      if (!isOwner) { await interaction.reply({ content: '❌ Только владелец может запрещать доступ!', ephemeral: true }); return; }
+      if (!isOwner && !isModerator(member)) { await interaction.reply({ content: '❌ Только владелец или модератор может запрещать доступ!', ephemeral: true }); return; }
       const rejectUser = interaction.options.getUser('user', true);
       const rejectMember = await guild.members.fetch(rejectUser.id).catch(() => null);
       if (!rejectMember) { await interaction.reply({ content: '❌ Пользователь не найден на сервере!', ephemeral: true }); return; }
@@ -361,7 +366,13 @@ async function handleSetupCommand(interaction: ChatInputCommandInteraction): Pro
     )
     .setColor(0x00ff00);
 
-  await interaction.reply({ embeds: [embed] });
+  // Отправляем настройки в личные сообщения, а не в канал
+  try {
+    await interaction.user.send({ embeds: [embed] });
+    await interaction.reply({ content: '✅ Настройки TempVoice отправлены тебе в личные сообщения.', ephemeral: true });
+  } catch {
+    await interaction.reply({ content: '❌ Не удалось отправить в ЛС. Включи личные сообщения от сервера в настройках приватности Discord.', ephemeral: true });
+  }
 }
 
 async function deployCommands(): Promise<void> {
