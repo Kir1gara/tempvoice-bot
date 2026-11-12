@@ -213,14 +213,14 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
       if (!isOwner) { await interaction.reply({ content: '❌ Только владелец может залочить комнату!', ephemeral: true }); return; }
       updateRoom(voiceState.channelId, { locked: true });
       await voiceChannel.permissionOverwrites.edit(guild.id, { Connect: false }).catch(console.error);
-      await interaction.reply({ content: '🔒 Комната залочена. Никто не может войти.' });
+      await interaction.reply({ content: '🔒 Комната залочена. Никто не может войти.', ephemeral: true });
       break;
 
     case 'unlock':
       if (!isOwner) { await interaction.reply({ content: '❌ Только владелец может разлочить комнату!', ephemeral: true }); return; }
       updateRoom(voiceState.channelId, { locked: false });
       await voiceChannel.permissionOverwrites.edit(guild.id, { Connect: true }).catch(console.error);
-      await interaction.reply({ content: '🔓 Комната разлочена. Все могут войти.' });
+      await interaction.reply({ content: '🔓 Комната разлочена. Все могут войти.', ephemeral: true });
       break;
 
     case 'name':
@@ -229,7 +229,7 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
       if (newName.length > 100) { await interaction.reply({ content: '❌ Название слишком длинное (макс. 100 символов)', ephemeral: true }); return; }
       updateRoom(voiceState.channelId, { name: newName });
       await voiceChannel.setName(newName).catch(console.error);
-      await interaction.reply({ content: `✅ Комната переименована в **${newName}**` });
+      await interaction.reply({ content: `✅ Комната переименована в **${newName}**`, ephemeral: true });
       break;
 
     case 'limit':
@@ -238,7 +238,7 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
       if (limit < 0 || limit > 99) { await interaction.reply({ content: '❌ Лимит от 0 до 99 (0 = без лимита)', ephemeral: true }); return; }
       updateRoom(voiceState.channelId, { user_limit: limit });
       await voiceChannel.setUserLimit(limit).catch(console.error);
-      await interaction.reply({ content: limit === 0 ? '✅ Лимит убран' : `✅ Лимит установлен: **${limit}** человек` });
+      await interaction.reply({ content: limit === 0 ? '✅ Лимит убран' : `✅ Лимит установлен: **${limit}** человек`, ephemeral: true });
       break;
 
     case 'kick':
@@ -251,7 +251,7 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
       if (targetMember.id === member.id) { await interaction.reply({ content: '❌ Нельзя кикнуть самого себя!', ephemeral: true }); return; }
       await targetMember.voice.setChannel(null).catch(() => {});
       removeRoomMember(voiceState.channelId, targetUser.id);
-      await interaction.reply({ content: `👢 **${targetUser.displayName}** кикнут из комнаты.` });
+      await interaction.reply({ content: `👢 **${targetUser.displayName}** кикнут из комнаты.`, ephemeral: true });
       break;
 
     case 'permit':
@@ -261,7 +261,7 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
       if (!permitMember) { await interaction.reply({ content: '❌ Пользователь не найден на сервере!', ephemeral: true }); return; }
       addRoomMember(voiceState.channelId, permitUser.id, 'member');
       await voiceChannel.permissionOverwrites.edit(permitUser.id, { Connect: true, ViewChannel: true }).catch(console.error);
-      await interaction.reply({ content: `✅ **${permitUser.displayName}** теперь может заходить в комнату.` });
+      await interaction.reply({ content: `✅ **${permitUser.displayName}** теперь может заходить в комнату.`, ephemeral: true });
       break;
 
     case 'reject':
@@ -274,7 +274,7 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
       }
       removeRoomMember(voiceState.channelId, rejectUser.id);
       await voiceChannel.permissionOverwrites.edit(rejectUser.id, { Connect: false, ViewChannel: false }).catch(console.error);
-      await interaction.reply({ content: `🚫 **${rejectUser.displayName}** больше не может заходить в комнату.` });
+      await interaction.reply({ content: `🚫 **${rejectUser.displayName}** больше не может заходить в комнату.`, ephemeral: true });
       break;
 
     case 'claim':
@@ -295,7 +295,7 @@ async function handleCommand(interaction: ChatInputCommandInteraction): Promise<
           ManageChannels: false, MoveMembers: false, MuteMembers: false, DeafenMembers: false
         }).catch(console.error);
       }
-      await interaction.reply({ content: `👑 **${member.displayName}** теперь владелец комнаты!` });
+      await interaction.reply({ content: `👑 **${member.displayName}** теперь владелец комнаты!`, ephemeral: true });
       break;
 
     case 'info':
