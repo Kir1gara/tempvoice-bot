@@ -113,6 +113,15 @@ async function handleVoiceStateUpdate(oldState: VoiceState, newState: VoiceState
 
   const creatorChannelId = config.creator_channel_id;
 
+  // DEBUG: логируем все voice state updates
+  console.log(`[DEBUG] VoiceStateUpdate: user=${newState.id}, oldChannel=${oldState.channelId}, newChannel=${newState.channelId}, streaming=${newState.streaming}, selfVideo=${newState.selfVideo}`);
+
+  // Игнорируем обновления, где пользователь не менял канал (стрим, камера, мут, дефен)
+  if (oldState.channelId === newState.channelId) {
+    console.log('[DEBUG] Игнорирую: канал не менялся');
+    return;
+  }
+
   // User joined creator channel
   if (newState.channelId === creatorChannelId && oldState.channelId !== creatorChannelId) {
     const existingRooms = getUserRooms(GUILD_ID, newState.id);
